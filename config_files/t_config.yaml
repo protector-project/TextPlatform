@@ -1,0 +1,23 @@
+ops:
+  load_envs:
+    config:
+      MINIO_ADDRESS: 127.0.0.1:9000
+      MINIO_ACCESS_KEY: 0Cfw3yBiUBFaxvkt
+      MINIO_SECRET_KEY: 0pR5bSC3s9fOwwn9liMFITC8QzwDSw1F
+  download_raw_data:
+    config:
+      bucket_name: protector
+      file_name: test_input2.json
+  detect_emotions:
+    config:
+      lang_code: it
+      local: it
+  run_h_speech:
+    config:
+      tmp_folder: /home/vbezerra/Documents/twitter-processing-pipeline/tmp
+      model_folder: /home/vbezerra/Documents/twitter-processing-pipeline/ml_models
+      model_name: it/model_it.tar.gz
+  tsv_to_json:
+    config:
+      language: it
+      local: it
