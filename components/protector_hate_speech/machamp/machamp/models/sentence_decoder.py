@@ -101,6 +101,12 @@ class MachampClassifier(Model):
         logits = self._classification_layer(embedded_text)
         probs = torch.nn.functional.softmax(logits, dim=-1)
 
+        # Check device for class weights
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+
         # Compute class weights for cross entropy loss if the class weights parameter is set (executed only at the first forward call)
         if self.class_weights is not None:
             # If they are explicitly defined in the config file, use these
@@ -112,7 +118,7 @@ class MachampClassifier(Model):
                 for label, weight in self.class_weights.items():
                     label_idx = self.vocab.get_token_index(label, namespace=self.task)
                     weights[label_idx] = weight
-                self.class_weights = torch.FloatTensor(weights).cpu()
+                self.class_weights = torch.FloatTensor(weights).to(device)
 
             # If they are set to True, compute them automatically
             elif (self.class_weights == "balanced"):
@@ -123,7 +129,7 @@ class MachampClassifier(Model):
                     weight = num_samples / float(num_labels * label_count)
                     label_idx = self.vocab.get_token_index(label, namespace=self.task)
                     weights[label_idx] = weight
-                self.class_weights = torch.FloatTensor(weights).cpu()
+                self.class_weights = torch.FloatTensor(weights).to(device)
 
             # Class weights are already initialized
             else:
@@ -175,4 +181,3 @@ class MachampClassifier(Model):
             else:
                 main_metrics[f".run/{self.task}/{metric_name}"] = metric.get_metric(reset)
         return {**main_metrics}
-
