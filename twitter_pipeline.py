@@ -23,7 +23,6 @@ def load_envs(context) -> dict:
         "MINIO_ACCESS_KEY": context.op_config["MINIO_ACCESS_KEY"],
         "MINIO_SECRET_KEY": context.op_config["MINIO_SECRET_KEY"],
     }
-    # config = dotenv_values(".env")
     return config
 
 
@@ -45,6 +44,36 @@ def download_raw_data(context, env_values: dict) -> list:
     )
     encoding = "utf-8"
     return [str(line, encoding) for line in obj]
+
+
+@op(config_schema={"bucket_name": str, "file_name": str})
+def upload_influx(context, env_values: dict, input_file: list):
+    from io import BytesIO
+
+    client = Minio(
+        env_values["MINIO_ADDRESS"],
+        access_key=env_values["MINIO_ACCESS_KEY"],
+        secret_key=env_values["MINIO_SECRET_KEY"],
+        secure=False,
+    )
+    bucket_name = context.op_config["bucket_name"]
+    input_name = context.op_config["file_name"]
+
+    b_input_file = "\n".join(input_file).encode("utf-8")
+    stream_input_file = BytesIO(b_input_file)
+
+    client.put_object(
+        bucket_name,
+        input_name,
+        data=stream_input_file,
+        length=len(b_input_file),
+        content_type="application/json",
+    )
+
+
+@op
+def merge_data(emotions: list, h_speech: list) -> list:
+    return emotions + h_speech
 
 
 @op
@@ -103,11 +132,13 @@ def run_h_speech(context, input_text: pd.DataFrame) -> pd.DataFrame:
 
 @op(config_schema={"language": str, "local": str})
 def tsv_to_json(context, results: pd.DataFrame) -> list:
-    return convert_tsv_to_influx(results, context.op_config["local"], context.op_config["language"])
+    return convert_tsv_to_influx(
+        results, context.op_config["local"], context.op_config["language"]
+    )
 
 
 @job
-def run_pipeline():
+def run_twitter_pipeline():
     env_values = load_envs()
     raw_data = download_raw_data(env_values)
     converted_tweets = convert_twitter_data(raw_data)
@@ -117,3 +148,5 @@ def run_pipeline():
     influx_h = tsv_to_json(output_h)
     display_results(influx_emotions)
     display_results(influx_h)
+    all_data = merge_data(influx_emotions, influx_h)
+    upload_influx(env_values, all_data)

@@ -47,6 +47,36 @@ def download_raw_data(context, env_values: dict) -> pd.DataFrame:
     return df
 
 
+@op(config_schema={"bucket_name": str, "file_name": str})
+def upload_influx(context, env_values: dict, input_file: list):
+    from io import BytesIO
+
+    client = Minio(
+        env_values["MINIO_ADDRESS"],
+        access_key=env_values["MINIO_ACCESS_KEY"],
+        secret_key=env_values["MINIO_SECRET_KEY"],
+        secure=False,
+    )
+    bucket_name = context.op_config["bucket_name"]
+    input_name = context.op_config["file_name"]
+
+    b_input_file = "\n".join(input_file).encode("utf-8")
+    stream_input_file = BytesIO(b_input_file)
+
+    client.put_object(
+        bucket_name,
+        input_name,
+        data=stream_input_file,
+        length=len(b_input_file),
+        content_type="application/json",
+    )
+
+
+@op
+def merge_data(emotions: list, h_speech: list) -> list:
+    return emotions + h_speech
+
+
 @op
 def display_results(obj: list):
     logger = get_dagster_logger()
@@ -69,6 +99,7 @@ def detect_emotions(context, input_file: list) -> list:
     return predict_emotions(
         input_file, context.op_config["lang_code"], "yt", context.op_config["local"]
     )
+
 
 @op(config_schema={"tmp_folder": str, "model_folder": str, "model_name": str})
 def run_h_speech(context, input_text: pd.DataFrame) -> pd.DataFrame:
@@ -98,13 +129,14 @@ def run_h_speech(context, input_text: pd.DataFrame) -> pd.DataFrame:
     )
     return df
 
+
 @op(config_schema={"local": str, "language": str})
 def create_influx(context, df: pd.DataFrame) -> list:
     return tsv_to_influx(df, context.op_config["local"], context.op_config["language"])
 
 
 @job
-def run_pipeline():
+def run_youtube_pipeline():
     env_values = load_envs()
     raw_data = download_raw_data(env_values)
     p_data = preprocess_tsv(raw_data)
@@ -114,3 +146,5 @@ def run_pipeline():
     influx_emotions = detect_emotions(youtube_json)
     display_results(influx_emotions)
     display_results(influx_h)
+    all_data = merge_data(influx_emotions, influx_h)
+    upload_influx(env_values, all_data)
