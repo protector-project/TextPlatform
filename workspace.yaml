@@ -1,2 +1,2 @@
 load_from:
-  - python_file: youtube_pipeline.py
+  - python_file: t_sensor.py
