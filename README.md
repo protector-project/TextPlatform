@@ -30,8 +30,28 @@ Create Hate Speech Container:
 
 ## How to Run
 
+### Single File
+
 ``conda activate text_pipeline``
 
 ``dagit -f twitter_pipeline.py``
 
 In the launchpad add the configuration of the file `config_files/t_config.yaml`
+
+### Using Sensor
+
+Watch a MinIO bucket and create new runs for files being uploaded
+
+Change the workspace.yaml file for the ``y_sensor.py`` for YouTube or ``t_sensor.py`` for Twitter.
+
+Create a folder to store Dagster information:
+
+``mkdir -p /home/vbezerra/dagster``
+
+Run the daemon in background:
+
+``DAGSTER_HOME=/home/vbezerra/dagster dagster-daemon run``
+
+Run Dagit in a new window:
+
+``DAGSTER_HOME=/home/vbezerra/dagster dagit``
