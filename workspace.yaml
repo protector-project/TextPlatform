@@ -1,2 +1,2 @@
 load_from:
-  - python_file: y_sensor.py
+  - python_file: main.py

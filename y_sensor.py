@@ -5,15 +5,13 @@ from youtube_pipeline import load_envs, run_youtube_pipeline
 
 
 @sensor(job=run_youtube_pipeline)
-def my_bucket_sensor():
+def my_bucket_sensor_youtube():
     envs = {
         "MINIO_ADDRESS": "127.0.0.1:9000",
         "MINIO_ACCESS_KEY": "WXNFElJwGfChm8r5",
         "MINIO_SECRET_KEY": "ZYuN9svCggBKHUp2xWQDeEdog2UbKSQy",
         "RAW_BUCKET": "protector",
         "AN_BUCKET": "influx",
-        "DOCKER_TMP_FOLDER": "/home/vbezerra/Documents/TextPlatform/tmp",
-        "DOCKER_MODEL_FOLDER": "/home/vbezerra/Documents/TextPlatform/ml_models",
     }
 
     model_names = {
@@ -64,8 +62,6 @@ def my_bucket_sensor():
                         },
                         "run_h_speech": {
                             "config": {
-                                "tmp_folder": envs["DOCKER_TMP_FOLDER"],
-                                "model_folder": envs["DOCKER_MODEL_FOLDER"],
                                 "model_name": model_to_be_used,
                             }
                         },
@@ -88,4 +84,4 @@ def my_bucket_sensor():
 
 @repository
 def my_repository():
-    return [run_youtube_pipeline, my_bucket_sensor]
+    return [run_youtube_pipeline, my_bucket_sensor_youtube]

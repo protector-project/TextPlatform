@@ -1,25 +1,23 @@
 from dagster import sensor, RunRequest, DefaultSensorStatus, repository
 from minio import Minio
 from minio.commonconfig import Tags
-from twitter_pipeline import load_envs, run_twitter_pipeline
+from twitter_pipeline import run_twitter_pipeline
 
 
 @sensor(job=run_twitter_pipeline)
-def my_bucket_sensor():
+def my_bucket_sensor_twitter():
     envs = {
-        "MINIO_ADDRESS": "127.0.0.1:9000",
-        "MINIO_ACCESS_KEY": "mFApqAjLdguc1Jh8",
-        "MINIO_SECRET_KEY": "kT9HzEQghGVMxnBFzaYjWth4LFNGBzRF",
+        "MINIO_ADDRESS": "172.17.0.2:9000",
+        "MINIO_ACCESS_KEY": "d2VpTGvgVdJWbcRO",
+        "MINIO_SECRET_KEY": "r8BSZrM4gJWLFLDuxas5Wuy7FTobtqSa",
         "RAW_BUCKET": "protector",
         "AN_BUCKET": "influx",
-        "DOCKER_TMP_FOLDER": "/home/vbezerra/Documents/TextPlatform/tmp",
-        "DOCKER_MODEL_FOLDER": "/home/vbezerra/Documents/TextPlatform/ml_models",
     }
 
     model_names = {
         "it": "it/model_it.tar.gz",
-        "bg": "bg/model_it.tar.gz",
-        "en": "en/model_it.tar.gz",
+        "bg": "bg/model_bg.tar.gz",
+        "en": "en/model_en.tar.gz",
     }
 
     client = Minio(
@@ -31,7 +29,7 @@ def my_bucket_sensor():
     bucket_name = envs["RAW_BUCKET"]
     response = client.list_objects(bucket_name, recursive=True)
     for resp in response:
-        tags = client.get_object_tags("protector", resp.object_name)
+        tags = client.get_object_tags(bucket_name, resp.object_name)
 
         # get file language
         # the file must follow the name scheme date_local_language.json
@@ -64,8 +62,6 @@ def my_bucket_sensor():
                         },
                         "run_h_speech": {
                             "config": {
-                                "tmp_folder": envs["DOCKER_TMP_FOLDER"],
-                                "model_folder": envs["DOCKER_MODEL_FOLDER"],
                                 "model_name": model_to_be_used,
                             }
                         },
@@ -88,4 +84,4 @@ def my_bucket_sensor():
 
 @repository
 def my_repository():
-    return [run_twitter_pipeline, my_bucket_sensor]
+    return [run_twitter_pipeline, my_bucket_sensor_twitter]

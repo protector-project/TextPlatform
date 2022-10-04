@@ -101,32 +101,24 @@ def detect_emotions(context, input_file: list) -> list:
     )
 
 
-@op(config_schema={"tmp_folder": str, "model_folder": str, "model_name": str})
+@op(config_schema={"model_name": str})
 def run_h_speech(context, input_text: pd.DataFrame) -> pd.DataFrame:
     input_text.to_csv(
-        "{}/input.tsv".format(context.op_config["tmp_folder"]),
+        "/app/tmp/input_youtube.tsv",
         index=False,
         header=False,
         sep="\t",
     )
     from subprocess import PIPE, Popen
 
-    c = (
-        "docker run -it -v {}:/app/model"
-        " -v {}:/app/tmp hate-speech-detector:devel"
-        " python machamp/predict.py /app/model/{} /app/tmp/input.tsv /app/tmp/out.tsv --device -1".format(
-            context.op_config["model_folder"],
-            context.op_config["tmp_folder"],
-            context.op_config["model_name"],
-        )
+    c = "python components/protector_hate_speech/machamp/predict.py /app/ml_models/{} /app/tmp/input_youtube.tsv /app/tmp/out_youtube.tsv --device -1".format(
+        context.op_config["model_name"],
     )
     c_ = c.split(" ")
     process = Popen(c_, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
 
-    df = pd.read_csv(
-        "{}/out.tsv".format(context.op_config["tmp_folder"]), sep="\t", header=None
-    )
+    df = pd.read_csv("/app/tmp/out_youtube.tsv", sep="\t", header=None)
     return df
 
 
