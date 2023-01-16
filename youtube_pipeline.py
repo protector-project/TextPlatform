@@ -59,8 +59,10 @@ def upload_influx(context, env_values: dict, input_file: list):
     )
     bucket_name = context.op_config["bucket_name"]
     input_name = context.op_config["file_name"]
-
-    b_input_file = "\n".join(input_file).encode("utf-8")
+    converted = []
+    for line in input_file:
+        converted.append(str(line))
+    b_input_file = "\n".join(converted).encode("utf-8")
     stream_input_file = BytesIO(b_input_file)
 
     client.put_object(
@@ -111,10 +113,13 @@ def run_h_speech(context, input_text: pd.DataFrame) -> pd.DataFrame:
     )
     from subprocess import PIPE, Popen
 
+    logger = get_dagster_logger()
+
     c = "python components/protector_hate_speech/machamp/predict.py /app/ml_models/{} /app/tmp/input_youtube.tsv /app/tmp/out_youtube.tsv --device -1".format(
         context.op_config["model_name"],
     )
     c_ = c.split(" ")
+    logger.info(c)
     process = Popen(c_, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
 
@@ -136,7 +141,7 @@ def run_youtube_pipeline():
     influx_h = create_influx(out_h)
     youtube_json = convert_to_json(p_data)
     influx_emotions = detect_emotions(youtube_json)
-    display_results(influx_emotions)
-    display_results(influx_h)
+    #display_results(influx_emotions)
+    #display_results(influx_h)
     all_data = merge_data(influx_emotions, influx_h)
     upload_influx(env_values, all_data)

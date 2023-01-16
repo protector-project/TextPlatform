@@ -2,16 +2,17 @@ from dagster import sensor, RunRequest, DefaultSensorStatus, repository
 from minio import Minio
 from minio.commonconfig import Tags
 from twitter_pipeline import run_twitter_pipeline
+import os
 
 
 @sensor(job=run_twitter_pipeline)
 def my_bucket_sensor_twitter():
     envs = {
-        "MINIO_ADDRESS": "172.17.0.2:9000",
-        "MINIO_ACCESS_KEY": "d2VpTGvgVdJWbcRO",
-        "MINIO_SECRET_KEY": "r8BSZrM4gJWLFLDuxas5Wuy7FTobtqSa",
-        "RAW_BUCKET": "protector",
-        "AN_BUCKET": "influx",
+        "MINIO_ADDRESS": os.environ.get("MINIO_ADDRESS"),
+        "MINIO_ACCESS_KEY": os.environ.get("MINIO_ACCESS_KEY"),
+        "MINIO_SECRET_KEY": os.environ.get("MINIO_SECRET_KEY"),
+        "RAW_BUCKET": os.environ.get("RAW_BUCKET_TWITTER"),
+        "AN_BUCKET": os.environ.get("AN_BUCKET_TWITTER"),
     }
 
     model_names = {

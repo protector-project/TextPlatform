@@ -2,22 +2,22 @@ from dagster import sensor, RunRequest, DefaultSensorStatus, repository
 from minio import Minio
 from minio.commonconfig import Tags
 from youtube_pipeline import load_envs, run_youtube_pipeline
-
+import os
 
 @sensor(job=run_youtube_pipeline)
 def my_bucket_sensor_youtube():
     envs = {
-        "MINIO_ADDRESS": "127.0.0.1:9000",
-        "MINIO_ACCESS_KEY": "WXNFElJwGfChm8r5",
-        "MINIO_SECRET_KEY": "ZYuN9svCggBKHUp2xWQDeEdog2UbKSQy",
-        "RAW_BUCKET": "protector",
-        "AN_BUCKET": "influx",
+        "MINIO_ADDRESS": os.environ.get("MINIO_ADDRESS"),
+        "MINIO_ACCESS_KEY": os.environ.get("MINIO_ACCESS_KEY"),
+        "MINIO_SECRET_KEY": os.environ.get("MINIO_SECRET_KEY"),
+        "RAW_BUCKET": os.environ.get("RAW_BUCKET_YOUTUBE"),
+        "AN_BUCKET": os.environ.get("AN_BUCKET_TWITTER"),
     }
 
     model_names = {
         "it": "it/model_it.tar.gz",
-        "bg": "bg/model_it.tar.gz",
-        "en": "en/model_it.tar.gz",
+        "bg": "bg/model_bg.tar.gz",
+        "en": "en/model_en.tar.gz",
     }
 
     client = Minio(
