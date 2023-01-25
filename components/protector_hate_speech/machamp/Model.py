@@ -56,21 +56,20 @@ import_module_and_submodules("machamp")
 class Model:
   def __init__(self):
     """Custom logic that prepares model.
-
     - Reusable servers: your_loader downloads model from remote repository.
     - Non-Reusable servers: your_loader loads model from a file embedded in the image.
     """
 
   def predict(self, features, names=[], meta=[]):
     import tempfile
-
+    print(features)
     tf_input = None
     tf_output = None
     try:
         # select model and extract
         
         if True:
-            model_path = "/home/vbezerra/Documents/TextPlatform/ml_models/en/model_en.tar.gz"
+            model_path = "/app/mlModels/en/weights.th"
             archive_dir = Path(model_path).resolve().parent
             if not os.path.isfile(archive_dir / "weights.th"):
                 with tarfile.open(model_path) as tar:
@@ -88,8 +87,9 @@ class Model:
         tf_input = tempfile.NamedTemporaryFile()
         tf_output = tempfile.NamedTemporaryFile()
         with open(tf_input.name, 'w') as f:
-            f.write(features)
-            f.write("\n")
+            for i in features:
+                f.write(str(i))
+                f.write("\n")
         """Custom inference logic."""
         util.predict_model_with_archive("machamp_predictor", params, archive_dir, tf_input.name, tf_output.name,
                                     batch_size=None)
@@ -108,6 +108,3 @@ class Model:
 
 # m = Model()
 # print(m.predict("RELIGIOUS HATE\toioioioioi"))
-
-
-        
