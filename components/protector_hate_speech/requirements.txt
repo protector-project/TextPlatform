@@ -4,3 +4,4 @@ torch==1.7.0
 networkx
 pandas==1.1.5
 packaging==21.3
+seldon-core
