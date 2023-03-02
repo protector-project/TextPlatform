@@ -1,4 +1,5 @@
 import json
+import os
 
 DOWNLOADER_WITH_CONFIG = ['s3', 'aws', 'minio']
 SUPPORTED_DOWNLOADER = ['http', 'https','s3', 'aws', 'minio']
@@ -7,19 +8,23 @@ MODEL_CONFIG = "MODEL_CONFIG"
 def download_from_config(config):
     print_obj_from_json(config)
     check_config_json(config)
-    if config["type"] == 'http' or config["type"] == 'https':
-        download_file_http(config["uri"], config["path"])
-    elif config["type"] == 's3' or config["type"] == 'aws':
-        download_file_s3(config["uri"],config["path"], config["config"])
-    # elif config["type"] == 'google' or config["type"] == 'gs':
-    #     download_file_google_storage(config["uri"], config["path"], config["config"])
-    elif config["type"] == 'minio':
-        download_file_minio(config["uri"],config["path"], config["config"])
+    check_create_path(config["path"])
+    if not download_if_present(config["path"]):
+        if config["type"] == 'http' or config["type"] == 'https':
+            download_file_http(config["uri"], config["path"])
+        elif config["type"] == 's3' or config["type"] == 'aws':
+            download_file_s3(config["uri"],config["path"], config["config"])
+        # elif config["type"] == 'google' or config["type"] == 'gs':
+        #     download_file_google_storage(config["uri"], config["path"], config["config"])
+        elif config["type"] == 'minio':
+            download_file_minio(config["uri"],config["path"], config["config"])
+        else:
+            type_not_implemented = config["type"]
+            raise Exception(
+                f"Type parameters not yet implemented or does not exist: {type_not_implemented}, the one supported are: {SUPPORTED_DOWNLOADER}")
     else:
-        type_not_implemented = config["type"]
-        raise Exception(
-            f"Type parameters not yet implemented or does not exist: {type_not_implemented}, the one supported are: {SUPPORTED_DOWNLOADER}")
-
+        file = config["path"]
+        print(f"File: {file}, already downloaded!")
 
 def download_file_http(url, path: str = None):
     import requests
@@ -119,55 +124,20 @@ def check_config_json(json_obj: object):
     except:
         raise Exception(f"Config value in the {MODEL_CONFIG} env not valid.")
 
-
-def config_s3_str_example():
-    return '{"access_key": "access_key" , "secret_key": "secret_key", "BUCKET_NAME":"BUCKET_NAME","OBJECT_NAME": "OBJECT_NAME", "references_not_to_provide": ["when creating the config json this field must not be passed","https://stackoverflow.com/questions/50100221/download-file-from-aws-s3-using-python","https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.download_file"]}'
-
-def json_config_s3_example():
-    json_data = config_s3_str_example()
-    return json.loads(json_data)
-
-def json_s3_example():
-    config = config_s3_str_example()
-    json_str = '{"type": "s3","uri": "s3_endpoint", "path": "path_where_to_save_model", "config": '+config+'}'
-    return json.loads(json_str)
-
-def config_minio_str_example():
-    return '{"access_key": "access_key" , "secret_key": "secret_key", "BUCKET_NAME":"BUCKET_NAME","OBJECT_NAME": "OBJECT_NAME", "references_not_to_provide": ["when creating the config json this field must not be passed","https://min.io/docs/minio/linux/developers/python/minio-py.html"]}'
-
-def json_config_minio_example():
-    json_data = config_minio_str_example()
-    return json.loads(json_data)
-
-def json_minio_example():
-    config = config_minio_str_example()
-    json_str = '{"type": "minio", "uri": "minio_endpoint", "path": "path_where_to_save_model", "config": '+config+'}'
-    return json.loads(json_str)
-
-def json_http_example():
-    json_str = '{"type": "http", "uri": "http_endpoint","path": "path_where_to_save_model"}'
-    return json.loads(json_str)
-
-
 def print_obj_from_json(obj):
     json_formatted_str = json.dumps(obj, indent=2)
     print(json_formatted_str)
 
-def json_config_gs_example():
-    print()
+def check_create_path(the_path: str):
+    directory = os.path.dirname(the_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Directory {directory} created!")
+    else:
+        print(f"Directory {directory} already exists!")
 
+def download_if_present(path: str):
+    return os.path.isfile(path)
 
-def get_services():
-    print(SUPPORTED_DOWNLOADER)
-
-def get_services_with_config():
-    print(DOWNLOADER_WITH_CONFIG)
-
-def print_config_s3():
-    print_obj_from_json(json_s3_example())
-
-def print_config_minio():
-    print_obj_from_json(json_minio_example())
-
-def print_config_http():
-    print_obj_from_json(json_http_example())
+def obj_from_json(json_str):
+    return json.loads(json_str)
